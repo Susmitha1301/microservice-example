@@ -3,6 +3,7 @@ package com.example.product_service.controller;
 import com.example.product_service.entity.Product;
 import com.example.product_service.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -37,5 +38,23 @@ public class ProductController {
     @DeleteMapping("/{id}")
     public String deleteProduct(@PathVariable Long id) {
         return productService.deleteProduct(id);
+    }
+
+    @GetMapping("/page")
+    public Page<Product> getProductsWithPaginationAndSorting(
+            @RequestParam int page,
+            @RequestParam int size,
+            @RequestParam String sortBy) {
+        return productService.getProductsWithPaginationAndSorting(page, size, sortBy);
+    }
+
+    @GetMapping("/in-stock")
+    public List<Product> getProductsInStock() {
+        return productService.getProductsInStock();
+    }
+
+    @GetMapping("/names")
+    public List<String> getAllProductNames() {
+        return productService.getAllProductNames();
     }
 }

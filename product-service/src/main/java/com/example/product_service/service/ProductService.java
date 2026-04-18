@@ -4,6 +4,11 @@ import com.example.product_service.entity.Product;
 import com.example.product_service.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import java.util.stream.Collectors;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,5 +46,24 @@ public Product getProductById(Long id){
             return "Product deleted successfully";
         }
         return "product not foumd";
+    }
+
+    public Page<Product> getProductsWithPaginationAndSorting(int page, int size, String sortBy) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
+        return productRepository.findAll(pageable);
+    }
+
+    public List<Product> getProductsInStock() {
+        List<Product> products = productRepository.findAll();
+        return products.stream()
+                .filter(product -> product.getStock() > 50)
+                .collect(Collectors.toList());
+    }
+
+    public List<String> getAllProductNames() {
+        List<Product> products = productRepository.findAll();
+        return products.stream()
+                .map(Product::getName)
+                .collect(Collectors.toList());
     }
 }
