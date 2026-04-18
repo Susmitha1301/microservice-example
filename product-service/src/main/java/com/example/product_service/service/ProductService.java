@@ -18,16 +18,19 @@ public class ProductService {
     @Autowired
     private ProductRepository productRepository;
 
-    public Product createProduct(Product product){
+    public Product createProduct(Product product) {
         return productRepository.save(product);
     }
-    public List<Product> getAllProducts(){
+
+    public List<Product> getAllProducts() {
         return productRepository.findAll();
-}
-public Product getProductById(Long id){
-    Optional<Product> product= productRepository.findById(id);
-    return product.orElse(null);
     }
+
+    public Product getProductById(Long id) {
+        Optional<Product> product = productRepository.findById(id);
+        return product.orElse(null);
+    }
+
     public Product updateProduct(Long id, Product updatedProduct) {
         Optional<Product> existingProduct = productRepository.findById(id);
 
@@ -40,8 +43,9 @@ public Product getProductById(Long id){
         }
         return null;
     }
+
     public String deleteProduct(Long id) {
-        if(productRepository.existsById(id)) {
+        if (productRepository.existsById(id)) {
             productRepository.deleteById(id);
             return "Product deleted successfully";
         }
@@ -65,5 +69,9 @@ public Product getProductById(Long id){
         return products.stream()
                 .map(Product::getName)
                 .collect(Collectors.toList());
+    }
+
+    public List<Product> getProductsAbovePrice(Double price) {
+        return productRepository.findProductsByPriceGreaterThan(price);
     }
 }

@@ -57,4 +57,9 @@ public class ProductController {
     public List<String> getAllProductNames() {
         return productService.getAllProductNames();
     }
+
+    @GetMapping("/price/{price}")
+    public List<Product> getProductsAbovePrice(@PathVariable Double price) {
+        return productService.getProductsAbovePrice(price);
+    }
 }
