@@ -23,4 +23,23 @@ public Product getProductById(Long id){
     Optional<Product> product= productRepository.findById(id);
     return product.orElse(null);
     }
+    public Product updateProduct(Long id, Product updatedProduct) {
+        Optional<Product> existingProduct = productRepository.findById(id);
+
+        if (existingProduct.isPresent()) {
+            Product product = existingProduct.get();
+            product.setName(updatedProduct.getName());
+            product.setPrice(updatedProduct.getPrice());
+            product.setStock(updatedProduct.getStock());
+            return productRepository.save(product);
+        }
+        return null;
+    }
+    public String deleteProduct(Long id) {
+        if(productRepository.existsById(id)) {
+            productRepository.deleteById(id);
+            return "Product deleted successfully";
+        }
+        return "product not foumd";
+    }
 }
