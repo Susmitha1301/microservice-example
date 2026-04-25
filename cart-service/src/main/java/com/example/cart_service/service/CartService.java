@@ -3,6 +3,8 @@ package com.example.cart_service.service;
 import com.example.cart_service.dto.ProductDTO;
 import com.example.cart_service.entity.Cart;
 import com.example.cart_service.entity.CartItem;
+import com.example.cart_service.event.CartEvent;
+import com.example.cart_service.kafka.CartProducer;
 import com.example.cart_service.repository.CartItemRepository;
 import com.example.cart_service.repository.CartRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,9 @@ public class CartService {
 
     @Autowired
     private WebClient webClient;
+
+    @Autowired
+    private CartProducer cartProducer;
 
     public Cart createCart(Cart cart) {
         return cartRepository.save(cart);
@@ -42,6 +47,14 @@ public class CartService {
         }
 
         cartItemRepository.save(item);
-        return "Item added to cart successfully";
+
+        CartEvent event = new CartEvent();
+        event.setCartId(item.getCartId());
+        event.setProductId(item.getProductId());
+        event.setQuantity(item.getQuantity());
+
+        cartProducer.sendEvent(event);
+
+        return "Item added to cart successfully and event published to Kafka";
     }
 }
