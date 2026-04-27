@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.concurrent.CompletableFuture;
+
 @Service
 public class CartService {
 
@@ -32,17 +34,11 @@ public class CartService {
 
     public String addItemToCart(CartItem item) {
 
-        ProductDTO product = webClient.get()
-                .uri("http://localhost:8081/products/" + item.getProductId())
-                .retrieve()
-                .bodyToMono(ProductDTO.class)
-                .block();
+        ProductDTO product = fetchProductAsync(item.getProductId()).join();
 
-        if (product == null) {
-            return "Product not found";
-        }
+        Boolean stockValid = validateStockAsync(product, item.getQuantity()).join();
 
-        if (product.getStock() < item.getQuantity()) {
+        if (!stockValid) {
             return "Insufficient stock";
         }
 
@@ -55,6 +51,32 @@ public class CartService {
 
         cartProducer.sendEvent(event);
 
-        return "Item added to cart successfully and event published to Kafka";
+        return "Item added to cart successfully using CompletableFuture and event published to Kafka";
+    }
+
+    public CompletableFuture<ProductDTO> fetchProductAsync(Long productId) {
+        return CompletableFuture.supplyAsync(() -> {
+            System.out.println("Fetching product asynchronously on thread: " + Thread.currentThread().getName());
+
+            ProductDTO product = webClient.get()
+                    .uri("http://localhost:8081/products/" + productId)
+                    .retrieve()
+                    .bodyToMono(ProductDTO.class)
+                    .block();
+
+            if (product == null) {
+                throw new RuntimeException("Product not found");
+            }
+
+            return product;
+        });
+    }
+
+    public CompletableFuture<Boolean> validateStockAsync(ProductDTO product, Integer quantity) {
+        return CompletableFuture.supplyAsync(() -> {
+            System.out.println("Validating stock asynchronously on thread: " + Thread.currentThread().getName());
+
+            return product.getStock() >= quantity;
+        });
     }
 }
