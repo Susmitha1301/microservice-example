@@ -29,20 +29,40 @@ public class CartService {
     private CartProducer cartProducer;
 
     public Cart createCart(Cart cart) {
+        System.out.println("Creating cart for userId: " + cart.getUserId());
         return cartRepository.save(cart);
     }
 
     public String addItemToCart(CartItem item) {
 
-        ProductDTO product = fetchProductAsync(item.getProductId()).join();
+        System.out.println("Add item request started. cartId="
+                + item.getCartId()
+                + ", productId=" + item.getProductId()
+                + ", quantity=" + item.getQuantity());
 
-        Boolean stockValid = validateStockAsync(product, item.getQuantity()).join();
+        CompletableFuture<ProductDTO> productFuture =
+                fetchProductAsync(item.getProductId());
 
-        if (!stockValid) {
+        CompletableFuture<Boolean> validationFuture =
+                productFuture.thenCompose(product ->
+                        validateStockAsync(product, item.getQuantity())
+                );
+
+        ProductDTO product = productFuture.join();
+        Boolean isStockValid = validationFuture.join();
+
+        if (product == null) {
+            System.out.println("Product not found for productId: " + item.getProductId());
+            return "Product not found";
+        }
+
+        if (!isStockValid) {
+            System.out.println("Insufficient stock for productId: " + item.getProductId());
             return "Insufficient stock";
         }
 
         cartItemRepository.save(item);
+        System.out.println("Cart item saved successfully");
 
         CartEvent event = new CartEvent();
         event.setCartId(item.getCartId());
@@ -51,12 +71,15 @@ public class CartService {
 
         cartProducer.sendEvent(event);
 
+        System.out.println("Add item request completed successfully");
+
         return "Item added to cart successfully using CompletableFuture and event published to Kafka";
     }
 
     public CompletableFuture<ProductDTO> fetchProductAsync(Long productId) {
         return CompletableFuture.supplyAsync(() -> {
-            System.out.println("Fetching product asynchronously on thread: " + Thread.currentThread().getName());
+            System.out.println("Fetching product asynchronously on thread: "
+                    + Thread.currentThread().getName());
 
             ProductDTO product = webClient.get()
                     .uri("http://localhost:8081/products/" + productId)
@@ -74,7 +97,8 @@ public class CartService {
 
     public CompletableFuture<Boolean> validateStockAsync(ProductDTO product, Integer quantity) {
         return CompletableFuture.supplyAsync(() -> {
-            System.out.println("Validating stock asynchronously on thread: " + Thread.currentThread().getName());
+            System.out.println("Validating stock asynchronously on thread: "
+                    + Thread.currentThread().getName());
 
             return product.getStock() >= quantity;
         });

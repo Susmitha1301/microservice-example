@@ -14,6 +14,14 @@ public class CartProducer {
     private KafkaTemplate<String, CartEvent> kafkaTemplate;
 
     public void sendEvent(CartEvent event) {
+
+        System.out.println("Kafka event publishing started: cartId="
+                + event.getCartId()
+                + ", productId=" + event.getProductId()
+                + ", quantity=" + event.getQuantity());
+
         kafkaTemplate.send(TOPIC, event);
+
+        System.out.println("Kafka event sent to topic: " + TOPIC);
     }
 }
